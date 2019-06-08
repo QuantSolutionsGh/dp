@@ -1,0 +1,251 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Student Data Pipeline stack
+Parameters:
+  Environment:
+    Type: String
+    Default: qa
+    AllowedValues: 
+      - dev
+      - qa
+      - prod
+    Description: Select the environment for this stack - dev, qa or prod. Default is qa
+  BucketName:
+    Type: String
+    Default: wrstudentqa
+    Description: Enter the s3 bucket name.
+  GlueInputTables:
+    Type: CommaDelimitedList
+    Default: "v_0_9_19,v_0_9_20"
+    Description: A comma-separated list of tables in Glue data catalog that should be processed.
+  PostgresHost:  
+    Type: String
+    Description: Postgres hostname
+  PostgresPort:  
+    Type: Number
+    Default: 5432
+    Description: Postgres port
+  PostgresDatabase:  
+    Type: String
+    Default: wr_logs_qa
+    Description: Postgres database name
+  PostgresUser:  
+    Type: String
+    Default: analyticsapidevmaster
+    Description: Postgres username
+  PostgresPassword:  
+    Type: String
+    Description: Postgres password
+    NoEcho: true
+  BooksApiUrl:
+    Type: String
+    Default: "https://books-api.worldreader.org/v1"
+    Description: The URL of the Books API
+  TokenJwtSecret:
+    Type: String
+    Description: Used to obtain an access token
+    NoEcho: true
+  TokenAuth0Audience:
+    Type: String
+    Description: Used to obtain an access token
+    NoEcho: true
+  TriggerGlueEtlFilename:
+    Type: String
+    Default: trigger-glue-etl.zip
+  TriggerGlueJobFilename:
+    Type: String
+    Default: trigger-glue-job.zip
+  UpsertEventAggregationsFilename:
+    Type: String
+    Default: upsert-event-aggregations.zip
+Resources:
+  EtlQueue:
+    Type: 'AWS::SQS::Queue'
+    Properties:
+      QueueName: !Join ["-", ["EtlQueue", !Ref "AWS::StackName"]]
+  EtlQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties: 
+      PolicyDocument:
+        Statement:
+          - Sid: !Join ["-", ["allow-etl-queue-send-message", !Ref Environment]]
+            Effect: Allow
+            Principal: "*"
+            Action: "SQS:SendMessage"
+            Resource:
+              !GetAtt EtlQueue.Arn
+      Queues: 
+        - !Ref EtlQueue
+  SqsEventTrigger:
+    Type: 'AWS::Lambda::EventSourceMapping'
+    Properties:
+      BatchSize: 1
+      Enabled: true
+      EventSourceArn: !GetAtt EtlQueue.Arn
+      FunctionName: !Ref TriggerGlueEtlAlias
+    DependsOn:
+      - TriggerGlueEtl
+      - EtlQueue
+  TriggerGlueEtl:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Code:
+        S3Bucket: student-data-pipeline
+        S3Key: !Join ["/", [!Ref Environment, "lambda", !Ref TriggerGlueEtlFilename]]
+      Handler: trigger-glue-etl.lambda_handler
+      Role: arn:aws:iam::425828220998:role/service-role/glue_trigger_lambda_execution
+      Runtime: python3.6
+      Timeout: 30
+      Environment:
+        Variables: 
+          GLUE_CRAWLER_NAME : !Ref LogCrawler
+          QUEUE_URL: !Ref EtlQueue
+    DependsOn:
+      - EtlQueue
+  TriggerGlueEtlAlias:
+    Type: 'AWS::Lambda::Alias'
+    Properties:
+      FunctionName: !Ref TriggerGlueEtl
+      FunctionVersion: $LATEST
+      Name: !Ref Environment
+  TriggerGlueJob:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Code:
+        S3Bucket: student-data-pipeline
+        S3Key: !Join ["/", [!Ref Environment, "lambda", !Ref TriggerGlueJobFilename]]
+      Handler: trigger-glue-job.lambda_handler
+      Role: arn:aws:iam::425828220998:role/service-role/glue_trigger_lambda_execution
+      Runtime: python3.6
+      Timeout: 30
+      Environment:
+        Variables: 
+          ENVIRONMENT: !Ref Environment
+          GLUE_JOB_NAME: !Ref LogJob
+          GLUE_INPUT_TABLES: !Join [",", !Ref GlueInputTables]
+  TriggerGlueJobInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref TriggerGlueJob
+      Action: 'lambda:InvokeFunction'
+      Principal: events.amazonaws.com
+  UpsertEventAggregations:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Code:
+        S3Bucket: student-data-pipeline
+        S3Key: !Join ["/", [!Ref Environment, "lambda", !Ref UpsertEventAggregationsFilename]]
+      Handler: upsert-event-aggregations.lambda_handler
+      Role: arn:aws:iam::425828220998:role/service-role/glue_trigger_lambda_execution
+      Runtime: python3.6
+      Timeout: 30
+      Environment:
+        Variables: 
+          PG_USER: !Ref PostgresUser
+          PG_PASSWORD: !Ref PostgresPassword
+          PG_HOST: !Ref PostgresHost
+          PG_PORT: !Ref PostgresPort
+          PG_DBNAME: !Ref PostgresDatabase
+          TOKEN_JWT_SECRET: !Ref TokenJwtSecret
+          TOKEN_AUTH0_AUDIENCE: !Ref TokenAuth0Audience
+          BOOKS_API_URL: !Ref BooksApiUrl
+          TOKEN_EMAIL: "m2m@worldreader.org"
+          TOKEN_NAME: "analytics-api"
+          TOKEN_ISS: "https://worldreader.eu.auth0.com/"
+          TOKEN_URL: "https://worldreader.org/authorization"
+          BOOKS_API_PAGE_SIZE: 20
+          TOKEN_PERMISSIONS: "*"
+  UpsertEventAggregationsInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref UpsertEventAggregations
+      Action: 'lambda:InvokeFunction'
+      Principal: events.amazonaws.com
+  PostgresConnection:
+    Type: AWS::Glue::Connection
+    Properties: 
+      CatalogId: !Ref AWS::AccountId
+      ConnectionInput: 
+        ConnectionType: JDBC
+        PhysicalConnectionRequirements:
+          AvailabilityZone: "us-east-1d"
+          SecurityGroupIdList: 
+           - "sg-0f305ce3bdadfd787"
+          SubnetId: "subnet-0508cb14ecbf6e902" 
+        ConnectionProperties: {
+          "JDBC_CONNECTION_URL": !Join ["", ["jdbc:postgresql://", !Ref PostgresHost, ":", !Ref PostgresPort, "/", !Ref PostgresDatabase]],
+          "USERNAME": !Ref PostgresUser,
+          "PASSWORD": !Ref PostgresPassword
+        }
+  LogCrawler:
+    Type: 'AWS::Glue::Crawler'
+    Properties:
+      DatabaseName : !Ref LogDatabase
+      Role : service-role/AWSGlueServiceRole-logs
+      Targets:
+        S3Targets:
+          - 
+            Path: !Join ["", ["s3://", !Ref BucketName, "/incoming_data"]]
+            Exclusions:
+              - "**/metadata/**"
+  LogDatabase:
+    Type: 'AWS::Glue::Database'
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput: {}
+  LogJob:
+    Type: AWS::Glue::Job
+    Properties:
+      Command:
+        Name: glueetl
+        ScriptLocation: !Join ["/", ["s3://student-data-pipeline", !Ref Environment, "glue/wr-etl-spark.py"]]
+      Role: service-role/AWSGlueServiceRole-logs
+      ExecutionProperty:
+        MaxConcurrentRuns: 1
+      MaxRetries: 0
+      DefaultArguments: {
+        '--input_database': !Ref LogDatabase,
+        '--output_connection': !Ref PostgresConnection,
+        '--output_database': !Ref PostgresDatabase,
+        '--job-bookmark-option': 'job-bookmark-enable'
+      }
+  StartGlueJobOnCrawlerComplete: 
+    Type: AWS::Events::Rule
+    Properties: 
+      Description: !Join [" ", ["Start the Glue ETL job when crawler completes - ", !Ref Environment]]
+      EventPattern: 
+        source: 
+          - "aws.glue"
+        detail-type: 
+          - "Glue Crawler State Change"
+        detail: 
+          state: 
+            - "Succeeded"
+          crawlerName:
+            - !Ref LogCrawler
+      State: "ENABLED"
+      Targets: 
+        - 
+          Arn: 
+            !GetAtt TriggerGlueJob.Arn
+          Id: "TriggerGlueJobTarget"
+    DependsOn:
+      - TriggerGlueJob
+  UpsertOnEtlJobStateChange: 
+    Type: AWS::Events::Rule
+    Properties: 
+      Description: !Join [" ", ["Trigger the upsert-reading-duration lambda when ETL job state changes - ", !Ref Environment]]
+      EventPattern: 
+        source: 
+          - "aws.glue"
+        detail-type: 
+          - "Glue Job State Change"
+        detail: 
+          jobName:
+            - !Ref LogJob
+      State: "ENABLED"
+      Targets: 
+        - 
+          Arn: 
+            !GetAtt UpsertEventAggregations.Arn
+          Id: "UpsertEventAggregationsTarget"
+          InputPath: "$.detail"

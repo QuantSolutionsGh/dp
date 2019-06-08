@@ -1,0 +1,108 @@
+[
+  {
+    "input": {
+      "columnName": "attributes.projectCode",
+      "type": "string"
+    },
+    "output": {
+      "columnName": "project_code",
+      "type": "string"
+    }
+  },
+  {
+    "input": {
+      "columnName": "attributes.siteCode",
+      "type": "string"
+    },
+    "output": {
+      "columnName": "site_code",
+      "type": "string"
+    }
+  },
+  {
+    "input": {
+      "columnName": "attributes.deviceId",
+      "type": "string"
+    },
+    "output": {
+      "columnName": "device_id",
+      "type": "integer"
+    }
+  },
+  {
+    "input": {
+      "columnName": "attributes.selectedGradeId",
+      "type": "string"
+    },
+    "output": {
+      "columnName": "grade_id",
+      "type": "integer"
+    }
+  },
+  {
+    "input": {
+      "columnName": "attributes.bookId",
+      "type": "string"
+    },
+    "output": {
+      "columnName": "book_id",
+      "type": "string"
+    }
+  },
+  {
+    "input": {
+      "columnName": "event_timestamp",
+      "type": "long"
+    },
+    "output": {
+      "columnName": "event_timestamp",
+      "type": "long"
+    }
+  },
+  {
+    "input": {
+      "columnName": "event_type",
+      "type": "string"
+    },
+    "output": {
+      "columnName": "event_type",
+      "type": "string"
+    }
+  },
+  {
+    "input": {
+      "value": "WR"
+    },
+    "output": {
+      "columnName": "organization_code",
+      "type": "string"
+    }
+  },
+  {
+    "input": {
+      "value": 1
+    },
+    "output": {
+      "columnName": "program_id",
+      "type": "integer"
+    }
+  },
+  {
+    "input": {
+      "value": 2
+    },
+    "output": {
+      "columnName": "project_id",
+      "type": "integer"
+    }
+  },
+  {
+    "input": {
+      "value": 1
+    },
+    "output": {
+      "columnName": "site_id",
+      "type": "integer"
+    }
+  }
+]

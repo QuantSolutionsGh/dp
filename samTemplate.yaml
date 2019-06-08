@@ -1,0 +1,54 @@
+Transform: 'AWS::Serverless-2016-10-31'
+Resources:
+
+  UpsertEventAggregations:
+    # This resource creates a Lambda function.
+    Type: 'AWS::Serverless::Function'
+
+    Properties:
+
+      # This function uses the python3.6runtime.
+      Runtime: python3.6
+
+      # This is the Lambda function's handler.
+      Handler: upsert-event-aggregations.lambda_handler
+
+      # The location of the Lambda function code.
+      CodeUri: ./upsert-event-aggregations
+
+
+  TriggerGlueJob:
+    # This resource creates a Lambda function.
+    Type: 'AWS::Serverless::Function'
+
+    Properties:
+
+      # This function uses the python3.6runtime.
+      Runtime: python3.6
+
+      # This is the Lambda function's handler.
+      Handler: trigger-glue-job.lambda_handler
+
+      # The location of the Lambda function code.
+      CodeUri: ./trigger-glue-job
+
+
+
+  TriggerGlueEtl:
+    # This resource creates a Lambda function.
+    Type: 'AWS::Serverless::Function'
+
+    Properties:
+
+      # This function uses the python3.6runtime.
+      Runtime: python3.6
+
+      # This is the Lambda function's handler.
+      Handler: trigger-glue-etl.lambda_handler
+
+      # The location of the Lambda function code.
+      CodeUri: ./trigger-glue-etl
+
+
+
+
