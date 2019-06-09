@@ -14,7 +14,7 @@ Resources:
       Handler: upsert-event-aggregations.lambda_handler
 
       # The location of the Lambda function code.
-      CodeUri: ./upsert-event-aggregations
+      CodeUri: ./lambda/upsert-event-aggregations
 
 
   TriggerGlueJob:
@@ -30,7 +30,7 @@ Resources:
       Handler: trigger-glue-job.lambda_handler
 
       # The location of the Lambda function code.
-      CodeUri: ./trigger-glue-job
+      CodeUri: ./lambda/trigger-glue-job
 
 
 
@@ -47,7 +47,7 @@ Resources:
       Handler: trigger-glue-etl.lambda_handler
 
       # The location of the Lambda function code.
-      CodeUri: ./trigger-glue-etl
+      CodeUri: ./lambda/trigger-glue-etl
 
 
 
