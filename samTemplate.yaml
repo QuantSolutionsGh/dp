@@ -14,6 +14,7 @@ Parameters:
     Description: Postgres port
   PostgresDatabase:
     Type: String
+    Default: '1'
     Description: Postgres database name
   PostgresUser:
     Type: String
@@ -21,6 +22,7 @@ Parameters:
   PostgresPassword:
     Type: String
     Description: Postgres password
+    Default: '2'
     NoEcho: true
   BooksApiUrl:
     Type: String
@@ -29,10 +31,12 @@ Parameters:
   TokenJwtSecret:
     Type: String
     Description: Used to obtain an access token
+    Default: '3'
     NoEcho: true
   TokenAuth0Audience:
     Type: String
     Description: Used to obtain an access token
+    Default: '4'
     NoEcho: true
 Resources:
 
