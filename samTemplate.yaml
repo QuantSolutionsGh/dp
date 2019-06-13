@@ -14,7 +14,6 @@ Parameters:
     Description: Postgres port
   PostgresDatabase:
     Type: String
-    Default: '1'
     Description: Postgres database name
   PostgresUser:
     Type: String
