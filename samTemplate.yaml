@@ -1,4 +1,39 @@
 Transform: 'AWS::Serverless-2016-10-31'
+Parameters:
+
+  GlueInputTables:
+    Type: CommaDelimitedList
+    Default: "v_1_1_rc3"
+    Description: A comma-separated list of tables in Glue data catalog that should be processed.
+  PostgresHost:
+    Type: String
+    Description: Postgres hostname
+  PostgresPort:
+    Type: Number
+    Default: 5432
+    Description: Postgres port
+  PostgresDatabase:
+    Type: String
+    Description: Postgres database name
+  PostgresUser:
+    Type: String
+    Description: Postgres username
+  PostgresPassword:
+    Type: String
+    Description: Postgres password
+    NoEcho: true
+  BooksApiUrl:
+    Type: String
+    Default: "https://books-api.worldreader.org/v1"
+    Description: The URL of the Books API
+  TokenJwtSecret:
+    Type: String
+    Description: Used to obtain an access token
+    NoEcho: true
+  TokenAuth0Audience:
+    Type: String
+    Description: Used to obtain an access token
+    NoEcho: true
 Resources:
 
   UpsertEventAggregations:
@@ -15,6 +50,22 @@ Resources:
 
       # The location of the Lambda function code.
       CodeUri: ./lambda/upsert-event-aggregations
+      Environment:
+        Variables:
+          PG_USER: !Ref PostgresUser
+          PG_PASSWORD: !Ref PostgresPassword
+          PG_HOST: !Ref PostgresHost
+          PG_PORT: !Ref PostgresPort
+          PG_DBNAME: !Ref PostgresDatabase
+          TOKEN_JWT_SECRET: !Ref TokenJwtSecret
+          TOKEN_AUTH0_AUDIENCE: !Ref TokenAuth0Audience
+          BOOKS_API_URL: !Ref BooksApiUrl
+          TOKEN_EMAIL: "m2m@worldreader.org"
+          TOKEN_NAME: "analytics-api"
+          TOKEN_ISS: "https://worldreader.eu.auth0.com/"
+          TOKEN_URL: "https://worldreader.org/authorization"
+          BOOKS_API_PAGE_SIZE: 20
+          TOKEN_PERMISSIONS: "*"
 
 
   TriggerGlueJob:
@@ -31,6 +82,9 @@ Resources:
 
       # The location of the Lambda function code.
       CodeUri: ./lambda/trigger-glue-job
+      Environment:
+        Variables:
+          GLUE_INPUT_TABLES: !Join [",", !Ref GlueInputTables]
 
 
 
@@ -48,6 +102,9 @@ Resources:
 
       # The location of the Lambda function code.
       CodeUri: ./lambda/trigger-glue-etl
+
+
+
 
 
 
