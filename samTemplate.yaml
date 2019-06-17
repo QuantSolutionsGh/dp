@@ -42,6 +42,8 @@ Resources:
 
     Properties:
 
+      FunctionName: 'hurray'
+
       # This function uses the python3.6runtime.
       Runtime: python3.6
 
