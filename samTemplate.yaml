@@ -36,7 +36,7 @@ Parameters:
     NoEcho: true
 Resources:
 
-  UpsertEventAggregations1350:
+  UpsertEventAggregations:
     # This resource creates a Lambda function.
     Type: 'AWS::Serverless::Function'
 
