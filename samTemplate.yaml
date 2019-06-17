@@ -36,13 +36,13 @@ Parameters:
     NoEcho: true
 Resources:
 
-  UpsertEventAggregations1350:
+  UpsertEventAggregations:
     # This resource creates a Lambda function.
     Type: 'AWS::Serverless::Function'
 
     Properties:
 
-      FunctionName: 'hurray'
+      FunctionName: 'UpsertEventAggregations'
 
       # This function uses the python3.6runtime.
       Runtime: python3.6
